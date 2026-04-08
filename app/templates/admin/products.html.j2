@@ -1,0 +1,38 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Products</h1>
+    <p>
+        <a class="btn btn-success" href="{{ url_for('add_product') }}">Add New Product</a>
+    </p>
+    {% if products %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.type.name if product.type else 'N/A' }}</td>
+                        <td>${{ '%.2f' | format(product.price) }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('edit_product', product_id=product.id) }}">Edit</a>
+                            <form action="{{ url_for('delete_product', product_id=product.id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No products available yet.</p>
+    {% endif %}
+{% endblock %}
