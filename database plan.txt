@@ -1,0 +1,131 @@
+cat << 'EOF' > "/workspaces/ITP4115_EA_PROJECT_PEGASUS/database plan.txt"
+Database Plan: Hardware Shop (12 Tables)
+
+Tables:
+1. User
+   - id: Integer primary key
+   - username: String(64), unique
+   - email: String(120), unique
+   - password_hash: String(128)
+   - is_admin: Boolean, default false
+   - created_at: DateTime, default UTC now
+   - last_seen: DateTime
+   - about_me: String(140)
+
+2. Brand
+   - id: Integer primary key
+   - name: String(64), unique
+   - description: String(200)
+
+3. ProductType
+   - id: Integer primary key
+   - name: String(64), unique
+   - description: String(200)
+
+4. SaleType
+   - id: Integer primary key
+   - name: String(64), unique
+   - discount_percent: Numeric(5,2), default 0
+   - label: String(64)
+
+5. Product
+   - id: Integer primary key
+   - name: String(140), nullable false
+   - description: Text
+   - price: Numeric(10,2), nullable false
+   - stock: Integer, default 0
+   - is_on_sale: Boolean, default false
+   - brand_id: Integer foreign key -> Brand.id
+   - type_id: Integer foreign key -> ProductType.id
+   - sale_type_id: Integer foreign key -> SaleType.id
+   - created_at: DateTime, default UTC now
+
+6. ProductImage
+   - id: Integer primary key
+   - product_id: Integer foreign key -> Product.id
+   - image_url: String(200), nullable false
+   - alt_text: String(140)
+   - sort_order: Integer, default 0
+
+7. ProductSpecification
+   - id: Integer primary key
+   - product_id: Integer foreign key -> Product.id
+   - key: String(64), nullable false
+   - value: String(200), nullable false
+
+8. Cart
+   - id: Integer primary key
+   - user_id: Integer foreign key -> User.id
+   - created_at: DateTime, default UTC now
+   - updated_at: DateTime
+
+9. CartItem
+   - id: Integer primary key
+   - cart_id: Integer foreign key -> Cart.id
+   - product_id: Integer foreign key -> Product.id
+   - quantity: Integer, default 1
+   - added_at: DateTime, default UTC now
+
+10. Order
+   - id: Integer primary key
+   - user_id: Integer foreign key -> User.id
+   - address_id: Integer foreign key -> Address.id
+   - total_amount: Numeric(10,2), default 0
+   - status: String(64), default 'Pending'
+   - created_at: DateTime, default UTC now
+   - updated_at: DateTime
+
+11. OrderItem
+   - id: Integer primary key
+   - order_id: Integer foreign key -> Order.id
+   - product_id: Integer foreign key -> Product.id
+   - quantity: Integer, nullable false
+   - price: Numeric(10,2), nullable false
+
+12. Address
+   - id: Integer primary key
+   - user_id: Integer foreign key -> User.id
+   - line1: String(200), nullable false
+   - line2: String(200)
+   - city: String(100), nullable false
+   - state: String(100)
+   - postal_code: String(20), nullable false
+   - country: String(100), nullable false
+   - created_at: DateTime, default UTC now
+
+Relationships:
+- User has one Cart, many Orders, and many Addresses.
+- Brand has many Products.
+- ProductType has many Products.
+- SaleType can apply to many Products.
+- Product has many ProductImages and ProductSpecifications.
+- Cart belongs to one User and contains many CartItems.
+- CartItem references one Product and one Cart.
+- Order belongs to one User and one Address, and contains many OrderItems.
+- OrderItem references one Product and one Order.
+
+Database Structure Notes:
+- This plan uses exactly 12 tables by storing shipping address data in a separate `Address` table.
+- Product metadata is normalized through `Brand`, `ProductType`, `SaleType`, `ProductImage`, and `ProductSpecification`.
+- Cart is separated from CartItem so each user can have one active cart and multiple line items.
+- `User.is_admin` controls admin product permissions.
+- `ProductSpecification` stores key/value details like CPU clock, memory, form factor, and wattage.
+- `ProductImage` supports multiple images per product with ordering.
+
+Admin/Product Management Flow:
+- Only admin users can add, update, or remove products.
+- Admins assign `Brand`, `ProductType`, and `SaleType` when creating products.
+- Admins can add product specifications and images separately from product core data.
+
+Member Flow:
+- Members browse the product catalog filtered by `Brand`, `ProductType`, or sale status.
+- Members add products to their `Cart` via `CartItem`.
+- Cart totals are computed from `CartItem.quantity * Product.price`.
+- Checkout converts active cart items into an `Order` with `OrderItem` records.
+- Orders are tracked by status and historical totals.
+
+Implementation Notes:
+- If you want to preserve the current user-role logic, keep `is_admin` on `User` and omit a separate role table.
+- `Address` is separate so shipping address history can be stored and reused.
+- The 12-table design preserves normalization while keeping admin product management simple.
+EOF

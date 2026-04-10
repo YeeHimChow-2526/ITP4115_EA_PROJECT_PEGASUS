@@ -1,0 +1,17 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Your Orders</h1>
+    {% if orders %}
+        <div class="list-group">
+            {% for order in orders %}
+                <a href="{{ url_for('order_detail', order_id=order.id) }}" class="list-group-item">
+                    <h4 class="list-group-item-heading">Order #{{ order.id }}</h4>
+                    <p class="list-group-item-text">Placed on {{ order.created_at.strftime('%Y-%m-%d %H:%M') }} - Total ${{ '%.2f' | format(order.total_amount) }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No orders found.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Start shopping</a>
+    {% endif %}
+{% endblock %}

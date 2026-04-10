@@ -1,0 +1,39 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Checkout</h1>
+    <form method="post">
+        <div class="row">
+            <div class="col-md-8">
+                <h3>Order Summary</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ '%.2f' | format(item.total_price()) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="lead">Total: <strong>${{ '%.2f' | format(total) }}</strong></p>
+            </div>
+            <div class="col-md-4">
+                <h3>Shipping</h3>
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.shipping_address.label }}
+                    {{ form.shipping_address(class="form-control", rows=4) }}
+                </div>
+                <button type="submit" class="btn btn-success">{{ form.submit.label.text }}</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}

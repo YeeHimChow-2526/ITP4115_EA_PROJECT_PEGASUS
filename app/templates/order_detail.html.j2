@@ -1,0 +1,29 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Order #{{ order.id }}</h1>
+    <p><strong>Placed:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p><strong>Status:</strong> {{ order.status }}</p>
+    <p><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ '%.2f' | format(item.price) }}</td>
+                    <td>${{ '%.2f' | format(item.subtotal()) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="lead">Order total: <strong>${{ '%.2f' | format(order.total_amount) }}</strong></p>
+    <a href="{{ url_for('orders') }}" class="btn btn-default">Back to orders</a>
+{% endblock %}
