@@ -1,6 +1,8 @@
+import secrets
+
 from functools import wraps
 from datetime import datetime
-from flask import render_template, redirect, flash, url_for, request, abort
+from flask import render_template, redirect, flash, url_for, request, abort, make_response, session
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.urls import url_parse
 
@@ -10,6 +12,7 @@ from app.forms import (
     LoginForm,
     RegistrationForm,
     EditProfileForm,
+    UserAdminForm,
     PostForm,
     ResetPasswordRequestForm,
     ResetPasswordForm,
@@ -85,10 +88,13 @@ def inject_cart_count():
         cart_item_count = sum(item.quantity for item in current_user.cart_items)
     return dict(cart_item_count=cart_item_count)
 
+@app.route('/remember')
+def remember():
+    session['last_visited'] = 'admin'
+    return redirect(url_for('index'))
 
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
-@login_required
 def index():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
@@ -117,11 +123,13 @@ def index():
 
 
 @app.route('/product/<int:product_id>', methods=['GET', 'POST'])
-@login_required
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     form = AddToCartForm()
     if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash('Please login to add items to your cart.')
+            return redirect(url_for('login'))
         if product.stock < form.quantity.data:
             flash('Not enough stock available.')
         else:
@@ -207,6 +215,53 @@ def order_detail(order_id):
 @admin_required
 def admin_dashboard():
     return render_template('admin/dashboard.html.j2', title='Admin Dashboard')
+
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    users = User.query.order_by(User.username).all()
+    return render_template('admin/users.html.j2', title='Admin Users', users=users)
+
+
+@app.route('/admin/user/new', methods=['GET', 'POST'])
+@admin_required
+def add_user():
+    form = UserAdminForm(original_username='', original_email='')
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            about_me=form.about_me.data,
+            is_admin=form.is_admin.data,
+        )
+        user.set_password(secrets.token_urlsafe(12))
+        db.session.add(user)
+        db.session.commit()
+        flash('User created successfully. They can reset their password through the normal reset flow.')
+        return redirect(url_for('admin_users'))
+    return render_template('admin/edit_user.html.j2', title='Add User', form=form)
+
+
+@app.route('/admin/user/<int:user_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    form = UserAdminForm(original_username=user.username, original_email=user.email, obj=user)
+    if form.validate_on_submit():
+        user.username = form.username.data
+        user.email = form.email.data
+        user.about_me = form.about_me.data
+        user.is_admin = form.is_admin.data
+        db.session.commit()
+        flash('User updated successfully.')
+        return redirect(url_for('admin_users'))
+    elif request.method == 'GET':
+        form.username.data = user.username
+        form.email.data = user.email
+        form.about_me.data = user.about_me
+        form.is_admin.data = user.is_admin
+    return render_template('admin/edit_user.html.j2', title='Edit User', form=form, user=user)
 
 
 @app.route('/admin/products')

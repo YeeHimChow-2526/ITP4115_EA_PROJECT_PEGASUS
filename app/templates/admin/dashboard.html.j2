@@ -1,8 +1,9 @@
 {% extends "base.html.j2" %}
 {% block app_content %}
     <h1>Admin Dashboard</h1>
-    <p>Welcome, admin. Use the links below to manage products.</p>
+    <p>Welcome, admin. Use the links below to manage products and users.</p>
     <p>
         <a class="btn btn-primary" href="{{ url_for('admin_products') }}">Manage Products</a>
+        <a class="btn btn-primary" href="{{ url_for('admin_users') }}">Manage Users</a>
     </p>
 {% endblock %}

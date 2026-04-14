@@ -1,0 +1,35 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Users</h1>
+    <p>
+        <a class="btn btn-success" href="{{ url_for('add_user') }}">Add New User</a>
+    </p>
+    {% if users %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Admin</th>
+                    <th>About Me</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                        <td>{{ user.about_me or '—' }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('edit_user', user_id=user.id) }}">Edit</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No users found.</p>
+    {% endif %}
+{% endblock %}
