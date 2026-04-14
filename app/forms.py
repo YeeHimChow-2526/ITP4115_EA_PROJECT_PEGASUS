@@ -61,8 +61,10 @@ class EditProfileForm(FlaskForm):
 class UserAdminForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
-    about_me = TextAreaField("About me", validators=[Optional(), Length(min=0, max=140)])
-    is_admin = BooleanField("Admin")
+    password = PasswordField("New Password", validators=[Optional()])
+    password2 = PasswordField("Repeat New Password", validators=[EqualTo('password')])
+    about_me = TextAreaField("About me", validators=[Length(min=0, max=140)])
+    is_admin = BooleanField("Is Admin")
     submit = SubmitField("Save User")
 
     def __init__(self, original_username, original_email, *args, **kwargs):
@@ -108,3 +110,8 @@ class AddToCartForm(FlaskForm):
 class CheckoutForm(FlaskForm):
     shipping_address = TextAreaField("Shipping Address", validators=[DataRequired(), Length(max=200)])
     submit = SubmitField("Place Order")
+
+
+class OrderSearchForm(FlaskForm):
+    search = StringField("Search by Order ID or User ID", validators=[Optional(), Length(max=100)])
+    submit = SubmitField("Search")

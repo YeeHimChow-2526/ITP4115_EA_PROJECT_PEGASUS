@@ -12,13 +12,14 @@ from app.forms import (
     LoginForm,
     RegistrationForm,
     EditProfileForm,
-    UserAdminForm,
     PostForm,
+    UserAdminForm,
     ResetPasswordRequestForm,
     ResetPasswordForm,
     ProductForm,
     AddToCartForm,
     CheckoutForm,
+    OrderSearchForm,
 )
 from app.models import (
     User,
@@ -240,7 +241,7 @@ def add_user():
         db.session.commit()
         flash('User created successfully. They can reset their password through the normal reset flow.')
         return redirect(url_for('admin_users'))
-    return render_template('admin/edit_user.html.j2', title='Add User', form=form)
+    return render_template('admin/add_user.html.j2', title='Add User', form=form)
 
 
 @app.route('/admin/user/<int:user_id>/edit', methods=['GET', 'POST'])
@@ -251,6 +252,8 @@ def edit_user(user_id):
     if form.validate_on_submit():
         user.username = form.username.data
         user.email = form.email.data
+        if form.password.data:
+            user.set_password(form.password.data)
         user.about_me = form.about_me.data
         user.is_admin = form.is_admin.data
         db.session.commit()
@@ -262,6 +265,16 @@ def edit_user(user_id):
         form.about_me.data = user.about_me
         form.is_admin.data = user.is_admin
     return render_template('admin/edit_user.html.j2', title='Edit User', form=form, user=user)
+
+
+@app.route('/admin/user/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully.')
+    return redirect(url_for('admin_users'))
 
 
 @app.route('/admin/products')
@@ -328,6 +341,41 @@ def delete_product(product_id):
     db.session.commit()
     flash('Product removed successfully.')
     return redirect(url_for('admin_products'))
+
+
+@app.route('/admin/orders', methods=['GET', 'POST'])
+@admin_required
+def admin_orders():
+    form = OrderSearchForm()
+    search_query = request.args.get('search', '', type=str)
+    orders_query = Order.query.order_by(Order.created_at.desc())
+    
+    if request.method == 'POST' and form.search.data:
+        search_query = form.search.data
+    
+    if search_query:
+        # Try to search by order ID first
+        try:
+            order_id = int(search_query)
+            orders_query = orders_query.filter(Order.id == order_id)
+        except ValueError:
+            # If not a valid integer, search by user ID
+            try:
+                user_id = int(search_query)
+                orders_query = orders_query.filter(Order.user_id == user_id)
+            except ValueError:
+                # If neither, search by username
+                orders_query = orders_query.join(User).filter(User.username.ilike(f'%{search_query}%'))
+    
+    orders = orders_query.all()
+    return render_template('admin/orders.html.j2', title='Admin Orders', orders=orders, form=form, search=search_query)
+
+
+@app.route('/admin/order/<int:order_id>')
+@admin_required
+def order_detail_admin(order_id):
+    order = Order.query.get_or_404(order_id)
+    return render_template('admin/order_detail.html.j2', title=f'Order #{order.id}', order=order)
 
 
 @app.route('/login', methods=['GET', 'POST'])

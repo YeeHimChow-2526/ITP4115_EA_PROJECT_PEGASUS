@@ -24,6 +24,9 @@
                         <td>{{ user.about_me or '—' }}</td>
                         <td>
                             <a class="btn btn-sm btn-primary" href="{{ url_for('edit_user', user_id=user.id) }}">Edit</a>
+                            <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

@@ -1,0 +1,53 @@
+{% extends "base.html.j2" %}
+{% block app_content %}
+    <h1>Order #{{ order.id }}</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Order Information</h5>
+            <p><strong>User:</strong> {{ order.user.username if order.user else 'N/A' }} (ID: {{ order.user_id }})</p>
+            <p><strong>Email:</strong> {{ order.user.email if order.user else 'N/A' }}</p>
+            <p><strong>Placed:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else 'N/A' }}</p>
+            <p><strong>Status:</strong> <span class="badge bg-{% if order.status == 'Pending' %}warning{% elif order.status == 'Completed' %}success{% else %}secondary{% endif %}">{{ order.status }}</span></p>
+            <p><strong>Shipping Address:</strong></p>
+            <p class="text-muted" style="white-space: pre-wrap;">{{ order.shipping_address }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Order Items</h5>
+            {% if order.items.count() > 0 %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Product ID</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.product.name if item.product else 'Product Deleted' }}</td>
+                                <td>{{ item.product_id }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ '%.2f' | format(item.price) }}</td>
+                                <td>${{ '%.2f' | format(item.subtotal()) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="lead text-end">Order Total: <strong>${{ '%.2f' | format(order.total_amount) }}</strong></p>
+            {% else %}
+                <p class="text-muted">No items in this order.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Back to Orders</a>
+    </div>
+{% endblock %}
