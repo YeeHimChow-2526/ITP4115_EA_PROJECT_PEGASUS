@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}管理儀表板 - 飛馬電腦後台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 頁面標題 -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-speedometer2"></i> 管理儀表板</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('admin.admin_products') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box"></i> 管理商品
+                </a>
+                <a href="{{ url_for('admin.admin_orders') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-truck"></i> 管理訂單
+                </a>
+                <a href="{{ url_for('admin.admin_users') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-people"></i> 管理用戶
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">總用戶數</h6>
+                            <h2 class="mt-2 mb-0">{{ total_users }}</h2>
+                        </div>
+                        <i class="bi bi-people fs-1 opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small bg-primary-dark">
+                    <a href="{{ url_for('admin.admin_users') }}" class="text-white stretched-link text-decoration-none">查看詳情 →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">總商品數</h6>
+                            <h2 class="mt-2 mb-0">{{ total_products }}</h2>
+                        </div>
+                        <i class="bi bi-box-seam fs-1 opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small bg-success-dark">
+                    <a href="{{ url_for('admin.admin_products') }}" class="text-white stretched-link text-decoration-none">查看詳情 →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">總訂單數</h6>
+                            <h2 class="mt-2 mb-0">{{ total_orders }}</h2>
+                        </div>
+                        <i class="bi bi-receipt fs-1 opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small bg-info-dark">
+                    <a href="{{ url_for('admin.admin_orders') }}" class="text-white stretched-link text-decoration-none">查看詳情 →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">待付款訂單</h6>
+                            <h2 class="mt-2 mb-0">{{ pending_orders }}</h2>
+                        </div>
+                        <i class="bi bi-clock-history fs-1 opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small bg-warning-dark">
+                    <a href="{{ url_for('admin.admin_orders', status='pending') }}" class="text-dark stretched-link text-decoration-none">查看詳情 →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖表與最近訂單 -->
+    <div class="row">
+        <!-- 最近訂單列表 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock"></i> 最近訂單</h5>
+                    <a href="{{ url_for('admin.admin_orders') }}" class="btn btn-sm btn-outline-light">查看全部</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>訂單號</th>
+                                    <th>用戶</th>
+                                    <th>總金額</th>
+                                    <th>狀態</th>
+                                    <th>時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('order_detail', order_id=order.id) }}" target="_blank">
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ order.user.username }}<br><small class="text-muted">{{ order.user.email }}</small></td>
+                                    <td><span class="fw-bold">HK${{ "%.2f"|format(order.total_amount) }}</span></td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if order.status == 'pending' %}bg-warning text-dark
+                                            {% elif order.status == 'paid' %}bg-primary
+                                            {% elif order.status == 'shipped' %}bg-info
+                                            {% elif order.status == 'delivered' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-outline-primary" target="_blank">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                <i class="bi bi-gear"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='paid') }}">標記為已付款</a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='shipped') }}">標記為已發貨</a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='delivered') }}">標記為已完成</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="{{ url_for('admin.update_order_status', order_id=order.id, status='cancelled') }}" onclick="return confirm('確定取消此訂單？')">取消訂單</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">暫無訂單</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快捷操作 / 系統資訊 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> 快捷操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.add_product') }}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> 新增商品
+                        </a>
+                        <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-info">
+                            <i class="bi bi-tags"></i> 管理分類
+                        </a>
+                        <a href="{{ url_for('admin.admin_users') }}?role=user" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> 查看所有用戶
+                        </a>
+                        <a href="{{ url_for('products') }}" class="btn btn-outline-secondary" target="_blank">
+                            <i class="bi bi-shop"></i> 前往商店首頁
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> 系統資訊</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="bi bi-person-badge"></i> 當前管理員：{{ current_user.username }}</li>
+                        <li class="mb-2"><i class="bi bi-calendar"></i> 登入時間：{{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else '-' }}</li>
+                        <li class="mb-2"><i class="bi bi-database"></i> 資料庫：SQLite</li>
+                        <li class="mb-2"><i class="bi bi-box"></i> 總商品數：{{ total_products }}</li>
+                        <li class="mb-2"><i class="bi bi-people"></i> 總用戶數：{{ total_users }}</li>
+                        <li class="mb-2"><i class="bi bi-receipt"></i> 總訂單數：{{ total_orders }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-primary-dark { background-color: #0a58ca; }
+.bg-success-dark { background-color: #146c43; }
+.bg-info-dark { background-color: #087990; }
+.bg-warning-dark { background-color: #e6a700; }
+.card-footer a:hover { text-decoration: underline !important; }
+</style>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}商品列表 - 飛馬電腦{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- 側邊篩選欄 -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> 篩選</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 商品分類 -->
+                    <h6 class="fw-bold">商品分類</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="{{ url_for('products') }}" class="text-decoration-none {% if not current_category %}fw-bold text-primary{% endif %}">
+                                全部商品
+                            </a>
+                        </li>
+                        {% for cat in categories %}
+                        <li class="mb-2">
+                            <a href="{{ url_for('products', category=cat.slug, sort=sort, search=search) }}" 
+                               class="text-decoration-none {% if current_category == cat.slug %}fw-bold text-primary{% endif %}">
+                                {{ cat.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <hr>
+                    
+                    <!-- 排序選項 -->
+                    <h6 class="fw-bold">排序方式</h6>
+                    <div class="btn-group-vertical w-100" role="group">
+                        <a href="{{ url_for('products', category=current_category, sort='newest', search=search) }}" 
+                           class="btn btn-outline-secondary btn-sm {% if sort == 'newest' %}active{% endif %}">
+                            <i class="bi bi-clock"></i> 最新上架
+                        </a>
+                        <a href="{{ url_for('products', category=current_category, sort='price_asc', search=search) }}" 
+                           class="btn btn-outline-secondary btn-sm {% if sort == 'price_asc' %}active{% endif %}">
+                            <i class="bi bi-arrow-up"></i> 價格低到高
+                        </a>
+                        <a href="{{ url_for('products', category=current_category, sort='price_desc', search=search) }}" 
+                           class="btn btn-outline-secondary btn-sm {% if sort == 'price_desc' %}active{% endif %}">
+                            <i class="bi bi-arrow-down"></i> 價格高到低
+                        </a>
+                        <a href="{{ url_for('products', category=current_category, sort='name_asc', search=search) }}" 
+                           class="btn btn-outline-secondary btn-sm {% if sort == 'name_asc' %}active{% endif %}">
+                            <i class="bi bi-sort-alpha-down"></i> 名稱 A-Z
+                        </a>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- 清除篩選 -->
+                    {% if current_category or search %}
+                    <a href="{{ url_for('products') }}" class="btn btn-danger btn-sm w-100">
+                        <i class="bi bi-x-circle"></i> 清除所有篩選
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 商品列表區域 -->
+        <div class="col-lg-9">
+            <!-- 搜索結果標題 -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">
+                    {% if current_category %}
+                        {% for cat in categories %}
+                            {% if cat.slug == current_category %}
+                                {{ cat.name }}
+                            {% endif %}
+                        {% endfor %}
+                    {% elif search %}
+                        搜尋 "{{ search }}"
+                    {% else %}
+                        全部商品
+                    {% endif %}
+                </h4>
+                <span class="text-muted">共 {{ pagination.total }} 件商品</span>
+            </div>
+            
+            <!-- 商品網格 -->
+            {% if products %}
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-md-4 col-6">
+                    <div class="card h-100 product-card shadow-sm">
+                        <div class="card-img-top text-center p-3 bg-light">
+                            {% if product.image_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + product.image_filename) }}" 
+                                     class="img-fluid" style="height: 150px; object-fit: contain;" 
+                                     alt="{{ product.name }}">
+                            {% else %}
+                                <i class="bi bi-cpu fs-1 text-secondary"></i>
+                            {% endif %}
+                            {% if product.discount_percent %}
+                                <span class="badge bg-danger position-absolute top-0 start-0 m-2">
+                                    -{{ product.discount_percent }}%
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <a href="{{ url_for('product_detail', slug=product.slug) }}" class="text-decoration-none text-dark">
+                                    {{ product.name }}
+                                </a>
+                            </h6>
+                            <div class="mb-2">
+                                <span class="text-muted small">{{ product.brand or '飛馬' }}</span>
+                            </div>
+                            <div class="price">
+                                <span class="fw-bold text-danger fs-5">HK${{ "%.2f"|format(product.price) }}</span>
+                                {% if product.original_price %}
+                                    <del class="text-muted ms-2 small">HK${{ "%.2f"|format(product.original_price) }}</del>
+                                {% endif %}
+                            </div>
+                            <div class="mt-2">
+                                {% if product.stock > 0 %}
+                                    <span class="badge bg-success">現貨</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">缺貨</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 pb-3">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('product_detail', slug=product.slug) }}" class="btn btn-sm btn-outline-primary">
+                                    查看詳情
+                                </a>
+                                {% if product.stock > 0 %}
+                                <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-cart-plus"></i> 加入購物車
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn btn-sm btn-secondary w-100" disabled>缺貨中</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 分頁 -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    <!-- 上一頁 -->
+                    <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('products', page=pagination.page-1, category=current_category, sort=sort, search=search) }}">
+                            <i class="bi bi-chevron-left"></i> 上一頁
+                        </a>
+                    </li>
+                    
+                    <!-- 頁碼 -->
+                    {% for page in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page %}
+                            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('products', page=page, category=current_category, sort=sort, search=search) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- 下一頁 -->
+                    <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('products', page=pagination.page+1, category=current_category, sort=sort, search=search) }}">
+                            下一頁 <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-emoji-frown fs-1 text-muted"></i>
+                <h4 class="mt-3">找不到相關商品</h4>
+                <p>請嘗試其他分類或清除篩選條件</p>
+                <a href="{{ url_for('products') }}" class="btn btn-primary">瀏覽全部商品</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+}
+.btn-group-vertical .btn.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}

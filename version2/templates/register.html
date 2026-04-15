@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}註冊 - 飛馬電腦{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h4 class="mb-0"><i class="bi bi-person-plus"></i> 會員註冊</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.username.label(class="form-label") }}
+                                {{ form.username(class="form-control", placeholder="請輸入用戶名") }}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control", placeholder="your@email.com") }}
+                                {% for error in form.email.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.first_name.label(class="form-label") }}
+                                {{ form.first_name(class="form-control", placeholder="名") }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.last_name.label(class="form-label") }}
+                                {{ form.last_name(class="form-control", placeholder="姓") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.phone.label(class="form-label") }}
+                            {{ form.phone(class="form-control", placeholder="聯絡電話") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", placeholder="密碼（至少6位）") }}
+                            {% for error in form.password.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.confirm_password.label(class="form-label") }}
+                            {{ form.confirm_password(class="form-control", placeholder="確認密碼") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="agree" required>
+                            <label class="form-check-label" for="agree">
+                                我已閱讀並同意 <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">《服務條款》</a>
+                            </label>
+                        </div>
+                        
+                        {{ form.submit(class="btn btn-success w-100 py-2") }}
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    已有帳戶？ <a href="{{ url_for('login') }}">立即登入</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 服務條款 Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">飛馬電腦服務條款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. 服務說明</h6>
+                <p>飛馬電腦提供電腦硬件銷售及相關服務...</p>
+                <h6>2. 會員責任</h6>
+                <p>用戶需確保提供的資料真實有效...</p>
+                <h6>3. 私隱政策</h6>
+                <p>我們嚴格保護您的個人資料...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

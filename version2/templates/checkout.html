@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}結算 - 飛馬電腦{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-credit-card"></i> 訂單結算</h2>
+    
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">填寫收件資訊</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="checkout-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.shipping_name.label(class="form-label") }}
+                            {{ form.shipping_name(class="form-control", placeholder="請填寫真實姓名") }}
+                            {% for error in form.shipping_name.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.shipping_phone.label(class="form-label") }}
+                            {{ form.shipping_phone(class="form-control", placeholder="聯絡電話") }}
+                            {% for error in form.shipping_phone.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.shipping_address.label(class="form-label") }}
+                            {{ form.shipping_address(class="form-control", rows=3, placeholder="詳細地址，包括地區、街道、門牌號") }}
+                            {% for error in form.shipping_address.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.note.label(class="form-label") }}
+                            {{ form.note(class="form-control", rows=2, placeholder="備註（選填）") }}
+                        </div>
+                        
+                        <hr>
+                        <h6>付款方式</h6>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" checked>
+                                <label class="form-check-label" for="cod">貨到付款（現金/轉數快）</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method" id="credit" value="credit">
+                                <label class="form-check-label" for="credit">信用卡（即將開放）</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">訂單摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {% for item in cart_items %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                            <span>HK${{ "%.2f"|format(item.subtotal) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>商品總額</span>
+                        <span>HK${{ "%.2f"|format(total) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>運費</span>
+                        <span>免運費</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>合計</span>
+                        <span class="text-danger">HK${{ "%.2f"|format(total) }}</span>
+                    </div>
+                    <button type="submit" form="checkout-form" class="btn btn-success w-100 mt-4 py-2">
+                        <i class="bi bi-check-circle"></i> 確認下單
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

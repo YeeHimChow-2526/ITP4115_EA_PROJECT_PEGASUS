@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - 飛馬電腦{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首頁</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('products') }}">商品列表</a></li>
+            {% if product.category %}
+            <li class="breadcrumb-item"><a href="{{ url_for('products', category=product.category.slug) }}">{{ product.category.name }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 商品图片区域 -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center p-4">
+                    {% if product.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + product.image_filename) }}" 
+                             class="img-fluid" style="max-height: 350px; object-fit: contain;" 
+                             alt="{{ product.name }}">
+                    {% else %}
+                        <i class="bi bi-cpu fs-1" style="font-size: 200px; color: #6c757d;"></i>
+                    {% endif %}
+                </div>
+            </div>
+            {% if product.discount_percent %}
+            <div class="mt-2 text-center">
+                <span class="badge bg-danger fs-6 px-3 py-2">限時優惠 -{{ product.discount_percent }}%</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 商品信息区域 -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title">{{ product.name }}</h2>
+                    
+                    {% if product.brand %}
+                    <p class="text-muted mb-2">品牌：{{ product.brand }}</p>
+                    {% endif %}
+                    
+                    <p class="text-muted small">SKU: {{ product.sku or 'N/A' }}</p>
+                    
+                    <!-- 价格区域 -->
+                    <div class="price-section my-3 p-3 bg-light rounded">
+                        <div class="d-flex align-items-center">
+                            <span class="text-danger fw-bold fs-1">HK${{ "%.2f"|format(product.price) }}</span>
+                            {% if product.original_price %}
+                                <del class="text-muted ms-3 fs-5">HK${{ "%.2f"|format(product.original_price) }}</del>
+                                <span class="ms-2 badge bg-danger">節省 HK${{ "%.2f"|format(product.original_price - product.price) }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 库存状态 -->
+                    <div class="mb-3">
+                        {% if product.stock > 0 %}
+                            <span class="badge bg-success fs-6 p-2"><i class="bi bi-check-circle"></i> 現貨</span>
+                            <span class="ms-2 text-muted">庫存 {{ product.stock }} 件</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6 p-2"><i class="bi bi-x-circle"></i> 缺貨</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 简短描述 -->
+                    {% if product.short_description %}
+                    <div class="mb-3">
+                        <h6>商品簡介</h6>
+                        <p class="text-muted">{{ product.short_description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 数量选择和加入购物车 -->
+                    {% if product.stock > 0 %}
+                    <form method="POST" action="{{ url_for('add_to_cart', product_id=product.id) }}" class="row g-3 align-items-end">
+                        <div class="col-auto">
+                            <label for="quantity" class="form-label">數量</label>
+                            <div class="input-group" style="width: 130px;">
+                                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()">-</button>
+                                <input type="number" name="quantity" id="quantity" class="form-control text-center" value="1" min="1" max="{{ product.stock }}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()">+</button>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-cart-plus"></i> 加入購物車
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-outline-danger btn-lg" onclick="addToWishlist({{ product.id }})">
+                                <i class="bi bi-heart"></i> 收藏
+                            </button>
+                        </div>
+                    </form>
+                    <div id="cart-message" class="mt-2"></div>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100" disabled>缺貨中，暫無法購買</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品详细规格 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="productTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#description" type="button" role="tab">商品描述</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#specifications" type="button" role="tab">規格參數</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">商品評價 ({{ reviews|length }})</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body tab-content">
+                    <!-- 描述 -->
+                    <div class="tab-pane fade show active" id="description" role="tabpanel">
+                        <div class="p-3">
+                            {{ product.description|safe if product.description else '<p class="text-muted">暫無詳細描述</p>'|safe }}
+                        </div>
+                    </div>
+                    
+                    <!-- 规格参数 -->
+                    <div class="tab-pane fade" id="specifications" role="tabpanel">
+                        <div class="p-3">
+                            {% if product.specifications %}
+                                {% set specs = product.specifications|from_json if product.specifications else {} %}
+                                {% if specs %}
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        {% for key, value in specs.items() %}
+                                        <tr>
+                                            <th style="width: 30%; background-color: #f8f9fa;">{{ key }}</th>
+                                            <td>{{ value }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p class="text-muted">暫無規格參數</p>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-muted">暫無規格參數</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 评价区域 -->
+                    <div class="tab-pane fade" id="reviews" role="tabpanel">
+                        <div class="p-3">
+                            {% if reviews %}
+                                {% for review in reviews %}
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ review.user.username }}</strong>
+                                            <div class="text-warning">
+                                                {% for i in range(review.rating) %}★{% endfor %}
+                                                {% for i in range(5 - review.rating) %}☆{% endfor %}
+                                                <span class="text-muted ms-2">({{ review.rating }}/5)</span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    {% if review.title %}
+                                        <h6 class="mt-2">{{ review.title }}</h6>
+                                    {% endif %}
+                                    <p>{{ review.content }}</p>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">暫無評價，成為第一個評價的用戶吧！</p>
+                            {% endif %}
+                            
+                            {% if current_user.is_authenticated %}
+                            <div class="mt-4">
+                                <h5>撰寫評價</h5>
+                                <form method="POST" action="{{ url_for('add_review', product_id=product.id) }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">評分</label>
+                                        <div class="star-rating">
+                                            <input type="radio" name="rating" value="5" id="star5"><label for="star5">★</label>
+                                            <input type="radio" name="rating" value="4" id="star4"><label for="star4">★</label>
+                                            <input type="radio" name="rating" value="3" id="star3"><label for="star3">★</label>
+                                            <input type="radio" name="rating" value="2" id="star2"><label for="star2">★</label>
+                                            <input type="radio" name="rating" value="1" id="star1"><label for="star1">★</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">標題（選填）</label>
+                                        <input type="text" class="form-control" id="title" name="title">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="content" class="form-label">評價內容</label>
+                                        <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">提交評價</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mt-3">
+                                <a href="{{ url_for('login', next=request.path) }}">登入</a> 後即可發表評價
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相关商品推荐 -->
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="mb-3">你可能也會喜歡</h4>
+            <hr>
+        </div>
+        {% for product in related_products %}
+        <div class="col-md-3 col-6 mb-4">
+            <div class="card h-100 product-card">
+                <div class="card-img-top text-center p-3 bg-light">
+                    {% if product.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + product.image_filename) }}" class="img-fluid" style="height: 120px; object-fit: contain;">
+                    {% else %}
+                        <i class="bi bi-cpu fs-1"></i>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <div class="price">
+                        <span class="fw-bold text-danger">HK${{ "%.2f"|format(product.price) }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a href="{{ url_for('product_detail', slug=product.slug) }}" class="btn btn-sm btn-outline-primary w-100">查看詳情</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* 数量输入框样式 */
+input[type="number"]::-webkit-inner-spin-button, 
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* 星级评分样式 */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.star-rating input {
+    display: none;
+}
+.star-rating label {
+    font-size: 1.5rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: #ffc107;
+}
+
+.product-card {
+    transition: transform 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-3px);
+}
+</style>
+
+<script>
+// 数量加减函数
+function decrementQuantity() {
+    let input = document.getElementById('quantity');
+    let value = parseInt(input.value);
+    if (value > 1) {
+        input.value = value - 1;
+    }
+}
+
+function incrementQuantity() {
+    let input = document.getElementById('quantity');
+    let value = parseInt(input.value);
+    let max = parseInt(input.getAttribute('max'));
+    if (value < max) {
+        input.value = value + 1;
+    }
+}
+
+// AJAX 加入购物车（可选增强）
+function addToCartAsync(productId) {
+    let quantity = document.getElementById('quantity').value;
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({product_id: productId, quantity: parseInt(quantity)})
+    })
+    .then(res => res.json())
+    .then(data => {
+        let msgDiv = document.getElementById('cart-message');
+        if (data.success) {
+            msgDiv.innerHTML = '<div class="alert alert-success alert-dismissible fade show">' + data.message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+            // 更新购物车数量显示
+            document.querySelectorAll('.cart-badge').forEach(badge => {
+                if (data.cart_count > 0) {
+                    badge.textContent = data.cart_count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            });
+        } else {
+            msgDiv.innerHTML = '<div class="alert alert-danger">' + data.error + '</div>';
+        }
+        setTimeout(() => { msgDiv.innerHTML = ''; }, 3000);
+    });
+}
+
+// 收藏功能（需要后端支持）
+function addToWishlist(productId) {
+    fetch('/api/wishlist/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({product_id: productId})
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+    });
+}
+
+// 初始化 Tab 激活状态（如果有 hash）
+if (window.location.hash) {
+    let tab = document.querySelector(`button[data-bs-target="${window.location.hash}"]`);
+    if (tab) {
+        let tabTrigger = new bootstrap.Tab(tab);
+        tabTrigger.show();
+    }
+}
+</script>
+{% endblock %}

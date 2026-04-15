@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}管理訂單 - 飛馬電腦後台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-truck"></i> 訂單管理</h2>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回儀表板
+                </a>
+            </div>
+
+            <!-- 訂單狀態篩選 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('admin.admin_orders', status='all') }}" 
+                           class="btn {% if current_status == 'all' or not current_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            全部訂單
+                        </a>
+                        <a href="{{ url_for('admin.admin_orders', status='pending') }}" 
+                           class="btn {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                            待付款
+                        </a>
+                        <a href="{{ url_for('admin.admin_orders', status='paid') }}" 
+                           class="btn {% if current_status == 'paid' %}btn-info{% else %}btn-outline-secondary{% endif %}">
+                            已付款
+                        </a>
+                        <a href="{{ url_for('admin.admin_orders', status='shipped') }}" 
+                           class="btn {% if current_status == 'shipped' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            已發貨
+                        </a>
+                        <a href="{{ url_for('admin.admin_orders', status='delivered') }}" 
+                           class="btn {% if current_status == 'delivered' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                            已完成
+                        </a>
+                        <a href="{{ url_for('admin.admin_orders', status='cancelled') }}" 
+                           class="btn {% if current_status == 'cancelled' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+                            已取消
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 訂單列表 -->
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>訂單號</th>
+                                    <th>用戶</th>
+                                    <th>收貨人</th>
+                                    <th>總金額</th>
+                                    <th>狀態</th>
+                                    <th>下單時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('order_detail', order_id=order.id) }}" target="_blank">
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ order.user.username }}<br><small class="text-muted">{{ order.user.email }}</small></td>
+                                    <td>{{ order.shipping_name }}<br><small>{{ order.shipping_phone }}</small></td>
+                                    <td><span class="fw-bold text-danger">HK${{ "%.2f"|format(order.total_amount) }}</span></td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if order.status == 'pending' %}bg-warning text-dark
+                                            {% elif order.status == 'paid' %}bg-primary
+                                            {% elif order.status == 'shipped' %}bg-info text-dark
+                                            {% elif order.status == 'delivered' %}bg-success
+                                            {% else %}bg-danger{% endif %} fs-6 p-2">
+                                            {% if order.status == 'pending' %}待付款
+                                            {% elif order.status == 'paid' %}已付款
+                                            {% elif order.status == 'shipped' %}已發貨
+                                            {% elif order.status == 'delivered' %}已完成
+                                            {% else %}已取消{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                                更新狀態
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                {% if order.status != 'pending' %}
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='pending') }}">待付款</a></li>
+                                                {% endif %}
+                                                {% if order.status != 'paid' %}
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='paid') }}">已付款</a></li>
+                                                {% endif %}
+                                                {% if order.status != 'shipped' %}
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='shipped') }}">已發貨</a></li>
+                                                {% endif %}
+                                                {% if order.status != 'delivered' %}
+                                                <li><a class="dropdown-item" href="{{ url_for('admin.update_order_status', order_id=order.id, status='delivered') }}">已完成</a></li>
+                                                {% endif %}
+                                                {% if order.status != 'cancelled' %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="{{ url_for('admin.update_order_status', order_id=order.id, status='cancelled') }}" onclick="return confirm('確定取消訂單？')">取消訂單</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                        <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                     </td>
+                                 </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">暫無訂單</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 訂單詳情 Modal（可選，快速查看訂單內容） -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">訂單詳情</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailContent">
+                <!-- 動態加載內容 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 快速查看訂單詳情（AJAX）
+function viewOrderDetail(orderId) {
+    fetch(`/admin/orders/detail/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = `
+                    <p><strong>訂單號：</strong> ${data.order.order_number}</p>
+                    <p><strong>用戶：</strong> ${data.order.username}</p>
+                    <p><strong>收貨人：</strong> ${data.order.shipping_name}</p>
+                    <p><strong>電話：</strong> ${data.order.shipping_phone}</p>
+                    <p><strong>地址：</strong> ${data.order.shipping_address}</p>
+                    <p><strong>備註：</strong> ${data.order.note || '無'}</p>
+                    <hr>
+                    <h6>商品清單</h6>
+                    <table class="table table-sm">
+                        <thead><tr><th>商品</th><th>單價</th><th>數量</th><th>小計</th></tr></thead>
+                        <tbody>
+                `;
+                data.order.items.forEach(item => {
+                    html += `<tr>
+                        <td>${item.product_name}</td>
+                        <td>HK$${item.product_price.toFixed(2)}</td>
+                        <td>${item.quantity}</td>
+                        <td>HK$${item.subtotal.toFixed(2)}</td>
+                    </tr>`;
+                });
+                html += `</tbody><tfoot><tr><th colspan="3">總計</th><th>HK$${data.order.total_amount.toFixed(2)}</th></tr></tfoot></table>`;
+                document.getElementById('orderDetailContent').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
+            } else {
+                alert('加載失敗');
+            }
+        });
+}
+</script>
+{% endblock %}

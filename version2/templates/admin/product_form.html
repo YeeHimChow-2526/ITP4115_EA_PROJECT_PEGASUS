@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - 飛馬電腦後台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-box"></i> {{ title }}</h2>
+                <a href="{{ url_for('admin.admin_products') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回商品列表
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control") }}
+                                {% for error in form.name.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.slug.label(class="form-label") }}
+                                {{ form.slug(class="form-control") }}
+                                <small class="text-muted">網址友好標識，如 "intel-core-i9-13900k"</small>
+                                {% for error in form.slug.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.brand.label(class="form-label") }}
+                                {{ form.brand(class="form-control") }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.sku.label(class="form-label") }}
+                                {{ form.sku(class="form-control") }}
+                                <small class="text-muted">庫存單位，必須唯一</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.price.label(class="form-label") }}
+                                {{ form.price(class="form-control", step="0.01") }}
+                                {% for error in form.price.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.original_price.label(class="form-label") }}
+                                {{ form.original_price(class="form-control", step="0.01") }}
+                                <small class="text-muted">原價（選填，用於顯示折扣）</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.stock.label(class="form-label") }}
+                                {{ form.stock(class="form-control") }}
+                                {% for error in form.stock.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category_id.label(class="form-label") }}
+                            {{ form.category_id(class="form-select") }}
+                            {% for error in form.category_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.short_description.label(class="form-label") }}
+                            {{ form.short_description(class="form-control", rows=2) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows=5) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.specifications.label(class="form-label") }}
+                            {{ form.specifications(class="form-control", rows=3, placeholder='{"核心數":"8","线程數":"16"}') }}
+                            <small class="text-muted">JSON 格式的規格參數</small>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control") }}
+                            {% if product and product.image_filename %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename='uploads/' + product.image_filename) }}" 
+                                         style="height: 80px;" class="img-thumbnail">
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3 form-check">
+                                {{ form.is_featured(class="form-check-input") }}
+                                {{ form.is_featured.label(class="form-check-label") }}
+                            </div>
+                            <div class="col-md-4 mb-3 form-check">
+                                {{ form.is_new(class="form-check-input") }}
+                                {{ form.is_new.label(class="form-check-label") }}
+                            </div>
+                            <div class="col-md-4 mb-3 form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                {{ form.is_active.label(class="form-check-label") }}
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

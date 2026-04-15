@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飛馬電腦 - {% block title %}砌機電腦配件專門店{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="{{ url_for('index') }}">
+                <i class="bi bi-pc-display"></i> 飛馬電腦
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <form class="d-flex mx-auto w-50" action="{{ url_for('products') }}" method="get">
+                    <input class="form-control me-2" type="search" name="search" placeholder="搜索商品、品牌..." aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit"><i class="bi bi-search"></i></button>
+                </form>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('products') }}"><i class="bi bi-grid"></i> 商品</a></li>
+                    <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('cart') }}">
+                        <i class="bi bi-cart"></i> 購物車
+                        {% if cart_count|default(0) > 0 %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count|default(0) }}</span>{% endif %}
+                    </a></li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="bi bi-person"></i> 個人資料</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('orders') }}"><i class="bi bi-receipt"></i> 我的訂單</a></li>
+                                {% if current_user.is_admin %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-shield-lock"></i> 管理後台</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> 登出</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}"><i class="bi bi-box-arrow-in-right"></i> 登入</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}"><i class="bi bi-person-plus"></i> 註冊</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 消息闪现 -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    <!-- 主内容 -->
+    {% block content %}{% endblock %}
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white-50 mt-5 py-4">
+        <div class="container text-center">
+            <p>&copy; 2026 飛馬電腦 | 砌機電腦配件專門店</p>
+            <p><small>ITP4115 雲端網頁應用開發課程作業</small></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

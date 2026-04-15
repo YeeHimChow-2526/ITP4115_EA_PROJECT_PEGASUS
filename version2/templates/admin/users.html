@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}管理用戶 - 飛馬電腦後台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-people"></i> 用戶管理</h2>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回儀表板
+                </a>
+            </div>
+
+            <!-- 搜索和篩選 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('admin.admin_users') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" name="search" class="form-control" placeholder="搜索用戶名/郵箱/電話" value="{{ search }}">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="status" class="form-select">
+                                <option value="all" {% if status == 'all' %}selected{% endif %}>全部狀態</option>
+                                <option value="active" {% if status == 'active' %}selected{% endif %}>啟用</option>
+                                <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>禁用</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="role" class="form-select">
+                                <option value="all" {% if role == 'all' %}selected{% endif %}>全部角色</option>
+                                <option value="admin" {% if role == 'admin' %}selected{% endif %}>管理員</option>
+                                <option value="user" {% if role == 'user' %}selected{% endif %}>普通用戶</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> 篩選</button>
+                            <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-secondary">重置</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 用戶列表 -->
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用戶名</th>
+                                    <th>郵箱</th>
+                                    <th>姓名</th>
+                                    <th>電話</th>
+                                    <th>角色</th>
+                                    <th>狀態</th>
+                                    <th>註冊時間</th>
+                                    <th>最後登入</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                    <td>{{ user.phone or '-' }}</td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                            <span class="badge bg-danger">管理員</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">普通用戶</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">啟用</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">禁用</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
+                                    <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" 
+                                                    data-id="{{ user.id }}" data-username="{{ user.username }}" data-email="{{ user.email }}"
+                                                    data-first_name="{{ user.first_name }}" data-last_name="{{ user.last_name }}"
+                                                    data-phone="{{ user.phone }}" data-address="{{ user.address }}"
+                                                    data-is_admin="{{ user.is_admin }}" data-is_active="{{ user.is_active }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            {% if user.id != current_user.id %}
+                                            <button type="button" class="btn btn-outline-danger" onclick="deleteUser({{ user.id }})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-4">
+                                        <i class="bi bi-people fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">暫無用戶數據</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分頁 -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_users', page=pagination.page-1, search=search, status=status, role=role) }}">
+                            <i class="bi bi-chevron-left"></i> 上一頁
+                        </a>
+                    </li>
+                    {% for page in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page %}
+                            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.admin_users', page=page, search=search, status=status, role=role) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_users', page=pagination.page+1, search=search, status=status, role=role) }}">
+                            下一頁 <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 編輯用戶 Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> 編輯用戶</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm" method="POST" action="{{ url_for('admin.edit_user') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="edit_user_id">
+                    <div class="mb-3">
+                        <label class="form-label">用戶名</label>
+                        <input type="text" name="username" id="edit_username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">郵箱</label>
+                        <input type="email" name="email" id="edit_email" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">名</label>
+                            <input type="text" name="first_name" id="edit_first_name" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">姓</label>
+                            <input type="text" name="last_name" id="edit_last_name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">電話</label>
+                        <input type="text" name="phone" id="edit_phone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">地址</label>
+                        <textarea name="address" id="edit_address" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_admin" id="edit_is_admin" class="form-check-input">
+                        <label class="form-check-label">管理員權限</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_active" id="edit_is_active" class="form-check-input">
+                        <label class="form-check-label">啟用帳戶</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">重置密碼（留空則不修改）</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="輸入新密碼">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 編輯用戶 Modal 數據填充
+const editUserModal = document.getElementById('editUserModal');
+editUserModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    document.getElementById('edit_user_id').value = button.dataset.id;
+    document.getElementById('edit_username').value = button.dataset.username;
+    document.getElementById('edit_email').value = button.dataset.email;
+    document.getElementById('edit_first_name').value = button.dataset.first_name || '';
+    document.getElementById('edit_last_name').value = button.dataset.last_name || '';
+    document.getElementById('edit_phone').value = button.dataset.phone || '';
+    document.getElementById('edit_address').value = button.dataset.address || '';
+    document.getElementById('edit_is_admin').checked = button.dataset.is_admin === 'True';
+    document.getElementById('edit_is_active').checked = button.dataset.is_active === 'True';
+});
+
+// 刪除用戶（AJAX）
+function deleteUser(userId) {
+    if (confirm('確定要刪除此用戶嗎？此操作不可恢復！')) {
+        fetch(`/admin/users/delete/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || '刪除失敗');
+            }
+        })
+        .catch(() => alert('操作失敗'));
+    }
+}
+</script>
+{% endblock %}
